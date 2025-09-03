@@ -8,6 +8,7 @@ from prompt import system_prompt
 load_dotenv()
  
 
+
 # 클라이언트를 한 번만 생성
 client = AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
