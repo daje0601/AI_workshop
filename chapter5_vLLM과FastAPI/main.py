@@ -7,15 +7,11 @@ from fastapi.responses import StreamingResponse, Response
 
 from llm_service import chat_openai, chat_runpod
 
-
 app = FastAPI()
-
 
 @app.get("/health")
 async def health_check():
     return {"message": "I am healthy"}
-
-
 
 class ChatRequest(BaseModel):
     query: str              # 필수 필드
