@@ -4,7 +4,7 @@ from openai import AsyncOpenAI
 from dotenv import load_dotenv
 from prompt import system_prompt
 
-load_dotenv()
+load_dotenv("./env")
 
 # 클라이언트 초기화
 openai_client = AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))
@@ -52,13 +52,16 @@ async def chat_runpod(query: str):
             "messages": [
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": query}
-            ]
+            ],
+        "max_tokens": 4096,
+        "temperature": 0,
+        "stop": ["\n<|end_of_text|>", "<|eot_id|>"]  
         }
     }
     
     async with httpx.AsyncClient() as client:
         response = await client.post(url, headers=headers, json=payload, timeout=30.0)
     
+    # return str(response.json())
     result = response.json()
-    tokens = result["output"][0]["choices"][0]["tokens"]
-    return "".join(tokens)
+    return str(result["output"][0]["choices"][0])

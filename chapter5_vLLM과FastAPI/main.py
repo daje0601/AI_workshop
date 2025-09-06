@@ -30,9 +30,8 @@ async def chat(request: ChatRequest):
             response = StreamingResponse(result, media_type="text/plain")
         else:
             response = Response(result, media_type="text/plain")
-    
+     
     elif request.provider == "runpod":
-        # RunPod는 스트리밍 미지원
         content = await chat_runpod(request.query)
         response = Response(content, media_type="text/plain")
     
