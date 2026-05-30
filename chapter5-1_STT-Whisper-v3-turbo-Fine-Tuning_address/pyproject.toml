@@ -1,0 +1,37 @@
+[project]
+name = "stt-env"
+version = "0.1.0"
+description = "Whisper STT fine-tuning environment (PyTorch 2.4 + torchcodec 0.3.0)"
+requires-python = ">=3.11,<3.12"
+dependencies = [
+    "torch==2.4.0",
+    "torchaudio==2.4.0",
+    "torchcodec==0.3.0",
+    "datasets==3.6.0",
+    "transformers>=4.45.0,<4.50.0",
+    "accelerate>=0.34.0",
+    "peft>=0.13.0",
+    "librosa",
+    "soundfile",
+    "jiwer",
+    "evaluate",
+    "huggingface_hub",
+    "Levenshtein",
+    "numpy<2.0",
+    "ipywidgets",
+    "av>=17.0.1",
+]
+
+[[tool.uv.index]]
+name = "pytorch-cu121"
+url = "https://download.pytorch.org/whl/cu121"
+explicit = true
+
+[tool.uv.sources]
+torch = { index = "pytorch-cu121" }
+torchaudio = { index = "pytorch-cu121" }
+
+[dependency-groups]
+dev = [
+    "ipykernel>=7.2.0",
+]

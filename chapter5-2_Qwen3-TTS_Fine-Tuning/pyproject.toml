@@ -1,0 +1,105 @@
+#
+# Qwen3-TTS Korean Fine-tuning Workspace
+# ----------------------------------------------------------------
+# 이 pyproject.toml은 "학습/추론 환경"을 정의하는 워크스페이스 메타데이터입니다.
+# qwen_tts 라이브러리 자체의 pyproject.toml(./Qwen3-TTS/pyproject.toml)과
+# 역할이 다릅니다:
+#
+#   ./Qwen3-TTS/pyproject.toml  =>  "qwen_tts 패키지 빌드용 메타데이터"
+#                                   (Alibaba 팀이 PyPI에 배포할 때 사용)
+#
+#   ./pyproject.toml (이 파일)   =>  "fine-tuning 학습 환경 정의"
+#                                   (uv sync 로 재현 가능한 학습 환경 구성)
+#
+# 사용 방법:
+#   $ cd /dataset/qwen-tts
+#   $ uv sync             # uv.lock 기반으로 .venv 재현
+#   $ uv add <패키지>      # 새 의존성 추가 시 (자동으로 lock 갱신)
+#
+
+[project]
+name = "qwen-tts-finetuning"
+version = "0.1.0"
+description = "Qwen3-TTS Korean voice cloning fine-tuning workspace"
+requires-python = ">=3.11,<3.12"
+
+dependencies = [
+    # -----------------------------------------------------------------
+    # PyTorch 생태계 (CUDA 12.1 빌드)
+    #   - [tool.uv.sources] 에서 pytorch-cu121 인덱스로 라우팅됨
+    #   - 시스템 CUDA 버전이 다른 GPU 서버에서는 +cuXXX 를 맞춰야 함
+    # -----------------------------------------------------------------
+    "torch==2.4.0",
+    "torchvision==0.19.0",
+    "torchaudio==2.4.0",
+
+    # -----------------------------------------------------------------
+    # 학습 코어
+    # -----------------------------------------------------------------
+    "transformers==4.57.3",
+    "accelerate==1.12.0",
+    "safetensors==0.7.0",
+    "datasets==3.6.0",
+
+    # -----------------------------------------------------------------
+    # FlashAttention 2 (Hopper/Ampere 등 CC 8.0+ GPU 필요)
+    #   - [tool.uv] no-build-isolation-package 에 등록 (torch 가 빌드에 필요)
+    #   - flash-attn 2.8.3 은 setup.py 가 setuptools/wheel 을 import 하지만
+    #     자기 build-system.requires 에 안 적은 알려진 버그가 있음.
+    #     no-build-isolation 이면 부모 env 가 build env 이므로
+    #     아래에 setuptools/wheel 을 명시적으로 깔아두어 빌드 시 import 가능하게 함.
+    # -----------------------------------------------------------------
+    "setuptools",          # flash-attn 빌드 의존
+    "wheel",               # flash-attn 빌드 의존
+    "flash-attn==2.8.3",
+
+    # -----------------------------------------------------------------
+    # 오디오 처리
+    # -----------------------------------------------------------------
+    "soundfile==0.13.1",
+    "librosa==0.11.0",
+
+    # -----------------------------------------------------------------
+    # qwen_tts 패키지 본체 (PyPI 공식 릴리스)
+    #   - 0.0.4 는 본 워크숍이 검증한 정확한 버전
+    #   - 다른 서버에서도 즉시 재현 가능 (로컬 소스 의존 없음)
+    # -----------------------------------------------------------------
+    "qwen-tts==0.0.4",
+]
+
+
+# ===================================================================
+# uv 전용 설정 블록
+# ===================================================================
+
+[tool.uv]
+# 이 워크스페이스는 빌드 가능한 패키지가 아니라 "환경 정의"만 담당.
+# (Qwen3-TTS/pyproject.toml 과의 충돌을 피하기 위해)
+package = false
+
+# flash-attn 은 빌드 시 torch 가 먼저 import 가능해야 컴파일됨.
+# 기본 isolated build 환경에는 torch 가 없으므로 부모 env 의 torch 를 쓰도록 지시.
+no-build-isolation-package = ["flash-attn"]
+
+
+# flash-attn 2.8.3 은 setup.py 가 setuptools 를 import 하지만,
+# 자기 build-system.requires 에 setuptools 를 명시하지 않은 알려진 버그가 있음.
+# 부모 env 에 setuptools 이 없으면 빌드가 실패하므로 명시적으로 주입.
+[tool.uv.extra-build-dependencies]
+flash-attn = ["setuptools", "wheel"]
+
+
+[tool.uv.sources]
+# PyTorch 는 +cu121 빌드를 PyTorch 공식 인덱스에서 받아야 함.
+torch = { index = "pytorch-cu121" }
+torchvision = { index = "pytorch-cu121" }
+torchaudio = { index = "pytorch-cu121" }
+
+
+[[tool.uv.index]]
+# PyTorch 공식 휠 인덱스 (CUDA 12.1 빌드용).
+# explicit=true 로 두면 torch/torchvision/torchaudio 만 이 인덱스를 보고,
+# 다른 패키지는 일반 PyPI 로만 해석됨 (해상도 충돌 방지).
+name = "pytorch-cu121"
+url = "https://download.pytorch.org/whl/cu121"
+explicit = true
